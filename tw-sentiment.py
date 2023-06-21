@@ -6,6 +6,8 @@ from flask import Flask, jsonify
 from marshmallow import Schema, fields
 import re
 from flask_cors import CORS
+from stop_words import get_stop_words
+from nltk.tokenize import word_tokenize
 
 analyzerPortuguese = SentimentPortuguese()
 analyzerEnglish = SentimentEnglish()
@@ -184,11 +186,20 @@ def getComments(videoName):
             listCommentFileNames.append(file)
 
     if fetchFile(listCommentFileNames, commentFileNameToSearch):
+        stopwords_en = get_stop_words('english')
+        stopwords_pt = get_stop_words('portuguese')
+        
         path = './comments/' + str(commentFileNameToSearch)
         fileComments = pd.read_csv(path)
         commentsList = fileComments.iloc[:, 1].tolist()
 
-        return commentsList
+        string = '|;| '.join(str(elemento) for elemento in commentsList)
+        tokens = word_tokenize(string)
+        filtered_words = [word for word in tokens if word.lower() not in stopwords_en and word.lower() not in stopwords_pt]
+        filtered_text = ' '.join(filtered_words)
+        lista = filtered_text.split('|;|')
+
+        return lista
     else:
         return ('Arquivo não encontrado!')
 
